@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Physics Admin Panel</title>
+<style>
+body { font-family: Arial; background: #f0f0f0; padding: 20px; }
+h1 { text-align: center; }
+input, textarea, button { width: 100%; padding: 8px; margin: 5px 0; }
+table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+th { background: #007bff; color: white; }
+img { width: 50px; height: auto; }
+button { cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>Physics Admin Panel</h1>
+
+<div>
+<h3>Add / Edit Post</h3>
+<input type="hidden" id="postId">
+<input type="text" id="title" placeholder="Title">
+<textarea id="content" placeholder="Content"></textarea>
+<input type="text" id="author" placeholder="Author">
+<input type="text" id="img" placeholder="Image URL">
+<button onclick="addOrUpdatePost()">Save Post</button>
+</div>
+
+<table id="postsTable">
+<thead>
+<tr><th>Title</th><th>Content</th><th>Author</th><th>Image</th><th>Action</th></tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const firebaseConfig = {
+        apiKey: "AIzaSyBvmM0i0oQyqE7OywtuPaNVwCIb3lcR3yA",
+  authDomain: "viral-video-2ddb4.firebaseapp.com",
+  databaseURL: "https://viral-video-2ddb4-default-rtdb.firebaseio.com",
+  projectId: "viral-video-2ddb4",
+  storageBucket: "viral-video-2ddb4.firebasestorage.app",
+  messagingSenderId: "371603329130",
+  appId: "1:371603329130:web:2125f1eb16b6bfb55e7a13",
+  measurementId: "G-L4481L78P1
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref('physics');
+
+    // Load all posts
+    db.on('value', snapshot => {
+        const tbody = document.querySelector('#postsTable tbody');
+        tbody.innerHTML = '';
+        snapshot.forEach(child => {
+            const post = child.val();
+            const id = child.key;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${post.title || ''}</td>
+                <td>${post.content || ''}</td>
+                <td>${post.author || ''}</td>
+                <td>${post.img ? '<img src="'+post.img+'">' : ''}</td>
+                <td>
+                    <button onclick="editPost('${id}')">Edit</button>
+                    <button onclick="deletePost('${id}')">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    });
+
+    // Add or update post
+    window.addOrUpdatePost = function() {
+        const id = document.getElementById('postId').value;
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+        const author = document.getElementById('author').value;
+        const img = document.getElementById('img').value;
+
+        if(!title || !content || !author) { alert("Fill all fields"); return; }
+
+        const postData = { title, content, author, img };
+
+        if(id) {
+            db.child(id).update(postData);
+        } else {
+            db.push(postData);
+        }
+
+        document.getElementById('postId').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('content').value = '';
+        document.getElementById('author').value = '';
+        document.getElementById('img').value = '';
+    }
+
+    // Edit post
+    window.editPost = function(id) {
+        db.child(id).get().then(snapshot => {
+            if(snapshot.exists()) {
+                const post = snapshot.val();
+                document.getElementById('postId').value = id;
+                document.getElementById('title').value = post.title;
+                document.getElementById('content').value = post.content;
+                document.getElementById('author').value = post.author;
+                document.getElementById('img').value = post.img;
+            }
+        });
+    }
+
+    // Delete post
+    window.deletePost = function(id) {
+        if(confirm("Are you sure?")) db.child(id).remove();
+    }
+
+});
+</script>
+</body>
+</html>
